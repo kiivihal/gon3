@@ -2,11 +2,12 @@ package gon3
 
 import (
 	"fmt"
-	"github.com/rychipman/easylex"
 	"io"
 	"io/ioutil"
 	"net/url"
 	"strings"
+
+	"github.com/rychipman/easylex"
 )
 
 type Parser struct {
@@ -102,7 +103,7 @@ func (p *Parser) blankNode(label string) *BlankNode {
 	} else if node, present := p.bNodeLabels[label]; present {
 		return node
 	}
-	newNode := p.newBlankNode()
+	newNode := NewBlankNode(label)
 	p.bNodeLabels[label] = newNode
 	return newNode
 }

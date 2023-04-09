@@ -19,7 +19,7 @@ type Parser struct {
 	baseURI       *IRI
 	namespaces    map[string]*IRI
 	bNodeLabels   map[string]*BlankNode
-	lastBlankNode *BlankNode
+	lastBlankNode int
 	curSubject    Term
 	curPredicate  Term
 }
@@ -33,7 +33,7 @@ func NewParser(baseUri string) *Parser {
 		baseURI:       NewIRI(baseUri),
 		namespaces:    map[string]*IRI{}, // TODO: probably don't need these map inits
 		bNodeLabels:   map[string]*BlankNode{},
-		lastBlankNode: &BlankNode{-1, ""}, // TODO: make this initially nil
+		lastBlankNode: -1, // TODO: make this initially nil
 	}
 	return p
 }
@@ -109,13 +109,13 @@ func (p *Parser) blankNode(label string) *BlankNode {
 }
 
 func (p *Parser) newBlankNode() *BlankNode {
-	id := p.lastBlankNode.Id + 1
+	id := p.lastBlankNode + 1
 	label := fmt.Sprintf("a%d", id)
 	b := &BlankNode{
 		Id:    id,
 		Label: label,
 	}
-	p.lastBlankNode = b
+	p.lastBlankNode = id
 	return b
 }
 
@@ -483,7 +483,7 @@ func (p *Parser) parseBlankNodePropertyList() (*BlankNode, error) {
 	if err != nil {
 		return nil, err
 	}
-	bNode := p.blankNode("bnodeproplist")
+	bNode := p.blankNode("")
 	p.curSubject = bNode
 	err = p.parsePredicateObjectList()
 	if err != nil {

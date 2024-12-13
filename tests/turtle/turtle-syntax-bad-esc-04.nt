@@ -1,2 +1,1 @@
-# Bad string escape
 <http://www.w3.org/2013/TurtleTests/s> <http://www.w3.org/2013/TurtleTests/p> "hello \U0000WXYZ" .

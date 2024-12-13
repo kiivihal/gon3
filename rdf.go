@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -61,7 +62,7 @@ func iriRefToURL(s string) string {
 
 // see http://www.w3.org/TR/rdf11-concepts/#dfn-blank-node
 type BlankNode struct {
-	Id    int
+	ID    int
 	Label string
 }
 
@@ -159,7 +160,7 @@ func lexicalForm(s string) string {
 }
 
 func unescapeEChar(s string) string {
-	var replacements = []struct {
+	replacements := []struct {
 		old string
 		new string
 	}{
@@ -173,7 +174,7 @@ func unescapeEChar(s string) string {
 		{`\\`, `\`},
 	}
 	for _, r := range replacements {
-		s = strings.Replace(s, r.old, r.new, -1)
+		s = strings.ReplaceAll(s, r.old, r.new)
 	}
 	return s
 }
@@ -210,39 +211,68 @@ func getIndexOfEscape(s string, substr string) int {
 }
 
 func unescapeUChar(s string) string {
-	for {
-		var start, hex, end string
-		uIdx := getIndexOfEscape(s, `\u`)
-		UIdx := getIndexOfEscape(s, `\U`)
+	var result strings.Builder
+	for i := 0; i < len(s); {
+		// Not an escape sequence
+		if i >= len(s)-1 || s[i] != '\\' {
+			result.WriteByte(s[i])
+			i++
+			continue
+		}
 
-		if uIdx >= 0 {
-			start = s[:uIdx]
-			if uIdx+6 > len(s) {
-				hex = s[uIdx+2:]
-				end = ""
-			} else {
-				hex = s[uIdx+2 : uIdx+6]
-				end = s[uIdx+6:]
-			}
-		} else if UIdx >= 0 {
-			start = s[:UIdx]
-			if UIdx+10 > len(s) {
-				hex = s[UIdx+2:]
-				end = ""
-			} else {
-				hex = s[UIdx+2 : UIdx+10]
-				end = s[UIdx+10:]
-			}
-		} else {
-			break
+		// Handle escaped backslash
+		if s[i+1] == '\\' {
+			result.WriteByte('\\')
+			i += 2
+			continue
 		}
-		num, err := strconv.ParseInt(hex, 16, 32)
-		if err != nil {
-			panic(err) // TODO: this shouldn't happen
+
+		// Check for Unicode escape
+		if i+1 < len(s) && (s[i+1] == 'u' || s[i+1] == 'U') {
+			seqLen := 4
+			if s[i+1] == 'U' {
+				seqLen = 8
+			}
+
+			// Check if we have enough characters for a complete sequence
+			if i+2+seqLen > len(s) {
+				result.WriteString(s[i:])
+				break
+			}
+
+			// Extract the hex digits
+			hexDigits := s[i+2 : i+2+seqLen]
+
+			// Verify all characters are valid hex digits
+			validHex := true
+			for _, c := range hexDigits {
+				if !unicode.Is(unicode.ASCII_Hex_Digit, rune(c)) {
+					validHex = false
+					break
+				}
+			}
+
+			if validHex {
+				// Try to unquote the sequence
+				if unquoted, err := strconv.Unquote(`"` + s[i:i+2+seqLen] + `"`); err == nil {
+					result.WriteString(unquoted)
+					i += 2 + seqLen
+					continue
+				}
+			}
+
+			// For invalid or incomplete sequences, write just the first part
+			// and continue processing from the next character
+			result.WriteString(s[i : i+2]) // Write \u or \U
+			i += 2
+			continue
 		}
-		s = fmt.Sprintf("%s%s%s", start, string(rune(num)), end)
+
+		// Not a recognized escape sequence
+		result.WriteByte(s[i])
+		i++
 	}
-	return s
+	return result.String()
 }
 
 // see http://www.w3.org/TR/rdf11-concepts/#dfn-rdf-triple

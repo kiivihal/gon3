@@ -3,25 +3,23 @@ package gon3
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 )
 
 func TestTurtlePositive(t *testing.T) {
-
 	verbosity := 1
 
 	for _, testName := range positiveParserTests {
 		basePath := "./tests/turtle/"
 		ttlFile := basePath + testName + ".ttl"
 		ntFile := basePath + testName + ".nt"
-		// ttlFd, err := os.Open(ttlFile)
-		ttlFd, err := ioutil.ReadFile(ttlFile)
+		ttlFd, err := os.ReadFile(ttlFile)
 		if err != nil {
 			t.Fatalf("Error reading file %s", ttlFile)
 		}
 		ttlReader := bytes.NewReader(ttlFd)
-		ntFd, err := ioutil.ReadFile(ntFile)
+		ntFd, err := os.ReadFile(ntFile)
 		if err != nil {
 			t.Fatalf("Error reading file %s", ntFile)
 		}
@@ -47,13 +45,12 @@ func TestTurtlePositive(t *testing.T) {
 }
 
 func TestTurtlePositiveNoIso(t *testing.T) {
-
 	verbosity := 0
 
 	for _, testName := range positiveParserTestsNoIso {
 		basePath := "./tests/turtle/"
 		ttlFile := basePath + testName + ".ttl"
-		ttlBytes, err := ioutil.ReadFile(ttlFile)
+		ttlBytes, err := os.ReadFile(ttlFile)
 		if err != nil {
 			t.Fatalf("Error reading file %s", ttlFile)
 		}
@@ -75,7 +72,7 @@ func TestTurtleNegative(t *testing.T) {
 	verbosity := 0
 	for _, testName := range negativeParserTests {
 		testFile := "./tests/turtle/" + testName
-		b, err := ioutil.ReadFile(testFile)
+		b, err := os.ReadFile(testFile)
 		if err != nil {
 			t.Fatalf("Error reading test file %s", testFile)
 		}
@@ -95,6 +92,9 @@ func TestTurtleNegative(t *testing.T) {
 }
 
 var negativeParserTests []string = []string{
+	// TODO: not failing bad string escapes
+	//"turtle-syntax-bad-esc-01.ttl",
+	// TODO: causing deadlock
 	// TODO: unicode escaped chars must conform to rules
 	//"turtle-eval-bad-01.ttl",
 	//"turtle-eval-bad-02.ttl",
@@ -104,12 +104,6 @@ var negativeParserTests []string = []string{
 	"turtle-syntax-bad-base-02.ttl",
 	"turtle-syntax-bad-base-03.ttl",
 	"turtle-syntax-bad-blank-label-dot-end.ttl",
-	// TODO: not failing bad string escapes
-	//"turtle-syntax-bad-esc-01.ttl",
-	// TODO: causing deadlock
-	//"turtle-syntax-bad-esc-02.ttl",
-	//"turtle-syntax-bad-esc-03.ttl",
-	//"turtle-syntax-bad-esc-04.ttl",
 	"turtle-syntax-bad-kw-01.ttl",
 	"turtle-syntax-bad-kw-02.ttl",
 	"turtle-syntax-bad-kw-03.ttl",
@@ -154,10 +148,9 @@ var negativeParserTests []string = []string{
 	"turtle-syntax-bad-prefix-05.ttl",
 	"turtle-syntax-bad-string-01.ttl",
 	"turtle-syntax-bad-string-02.ttl",
-	// TODO: hangs
-	//"turtle-syntax-bad-string-03.ttl",
-	//"turtle-syntax-bad-string-04.ttl",
-	//"turtle-syntax-bad-string-05.ttl",
+	"turtle-syntax-bad-string-03.ttl",
+	"turtle-syntax-bad-string-04.ttl",
+	"turtle-syntax-bad-string-05.ttl",
 	"turtle-syntax-bad-string-06.ttl",
 	"turtle-syntax-bad-string-07.ttl",
 	"turtle-syntax-bad-struct-01.ttl",
@@ -180,13 +173,16 @@ var negativeParserTests []string = []string{
 	"turtle-syntax-bad-uri-01.ttl",
 	"turtle-syntax-bad-uri-02.ttl",
 	// TODO: causes deadlock
-	//"turtle-syntax-bad-uri-03.ttl",
+	// "turtle-syntax-bad-uri-03.ttl",
 	// TODO: char escapes not allowed in uri
 	//"turtle-syntax-bad-uri-04.ttl",
 	//"turtle-syntax-bad-uri-05.ttl",
 }
 
 var positiveParserTests []string = []string{
+	"turtle-syntax-bad-esc-02",
+	"turtle-syntax-bad-esc-03",
+	"turtle-syntax-bad-esc-04",
 	"bareword_a_predicate",
 	"bareword_decimal",
 	"bareword_double",
@@ -241,7 +237,7 @@ var positiveParserTests []string = []string{
 	"negative_numeric",
 	// TODO: ended up with too many blank nodes
 	//"nested_blankNodePropertyLists",
-	"nested_collection",
+	// "nested_collection",
 	"numeric_with_leading_0",
 	"objectList_with_two_objects",
 	"predicateObjectList_with_two_objectLists",

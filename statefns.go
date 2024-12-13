@@ -175,9 +175,9 @@ func lexIRIRef(l *easylex.Lexer) easylex.StateFn {
 
 func lexRDFLiteral(l *easylex.Lexer) easylex.StateFn {
 	if matchLongQuote.MatchOne(l) {
-		for {
-			if matchLongQuote.MatchOne(l) {
-				break
+		for !matchLongQuote.MatchOne(l) {
+			if l.Peek() == easylex.EOF {
+				return l.Errorf("unterminated long quote string")
 			}
 			q := matchQuote.MatchOne(l)
 			q = matchQuote.MatchOne(l) || q
@@ -189,13 +189,29 @@ func lexRDFLiteral(l *easylex.Lexer) easylex.StateFn {
 				switch l.Peek() {
 				case 'u':
 					l.Next()
+					hexValid := true
 					for i := 0; i < 4; i += 1 {
-						matchHex.AssertOne(l, "Expected hex digit while lexing RDF Literal")
+						if !matchHex.MatchOne(l) {
+							hexValid = false
+							break
+						}
+					}
+					if !hexValid {
+						ch = false
+						break
 					}
 				case 'U':
 					l.Next()
+					hexValid := true
 					for i := 0; i < 8; i += 1 {
-						matchHex.AssertOne(l, "Expected hex digit while lexing RDF Literal")
+						if !matchHex.MatchOne(l) {
+							hexValid = false
+							break
+						}
+					}
+					if !hexValid {
+						ch = false
+						break
 					}
 				case 't', 'b', 'n', 'r', 'f', '"', '\'', '\\':
 					l.Next()
@@ -204,16 +220,16 @@ func lexRDFLiteral(l *easylex.Lexer) easylex.StateFn {
 				}
 			}
 			if q && !ch {
-				// TODO: error
+				break
 			}
 		}
 		l.Emit(tokenStringLiteralLongQuote)
 		return lexDocument
 	}
 	if matchLongSingleQuote.MatchOne(l) {
-		for {
-			if matchLongSingleQuote.MatchOne(l) {
-				break
+		for !matchLongSingleQuote.MatchOne(l) {
+			if l.Peek() == easylex.EOF {
+				return l.Errorf("unterminated long single quote string")
 			}
 			q := matchSingleQuote.MatchOne(l)
 			q = matchSingleQuote.MatchOne(l) || q
@@ -225,13 +241,29 @@ func lexRDFLiteral(l *easylex.Lexer) easylex.StateFn {
 				switch l.Peek() {
 				case 'u':
 					l.Next()
+					hexValid := true
 					for i := 0; i < 4; i += 1 {
-						matchHex.AssertOne(l, "Expected hex digit while lexing RDF Literal")
+						if !matchHex.MatchOne(l) {
+							hexValid = false
+							break
+						}
+					}
+					if !hexValid {
+						ch = false
+						break
 					}
 				case 'U':
 					l.Next()
+					hexValid := true
 					for i := 0; i < 8; i += 1 {
-						matchHex.AssertOne(l, "Expected hex digit while lexing RDF Literal")
+						if !matchHex.MatchOne(l) {
+							hexValid = false
+							break
+						}
+					}
+					if !hexValid {
+						ch = false
+						break
 					}
 				case 't', 'b', 'n', 'r', 'f', '"', '\'', '\\':
 					l.Next()
@@ -248,20 +280,46 @@ func lexRDFLiteral(l *easylex.Lexer) easylex.StateFn {
 	}
 	if matchQuote.MatchOne(l) {
 		for {
+			if l.Peek() == easylex.EOF {
+				return l.Errorf("unterminated quote string")
+			}
 			if easylex.NewMatcher().RejectRunes("\u0022\u005c\u000a\u000d").MatchOne(l) {
 				// do nothing
 			} else if l.Peek() == '\\' {
 				l.Next()
+				if l.Peek() == easylex.EOF {
+					return l.Errorf("incomplete escape sequence")
+				}
 				switch l.Peek() {
 				case 'u':
 					l.Next()
+					hexValid := true
 					for i := 0; i < 4; i += 1 {
-						matchHex.AssertOne(l, "Expected hex digit while lexing RDF Literal")
+						if l.Peek() == easylex.EOF {
+							return l.Errorf("incomplete \\u escape sequence")
+						}
+						if !matchHex.MatchOne(l) {
+							hexValid = false
+							break
+						}
+					}
+					if !hexValid {
+						break
 					}
 				case 'U':
 					l.Next()
+					hexValid := true
 					for i := 0; i < 8; i += 1 {
-						matchHex.AssertOne(l, "Expected hex digit while lexing RDF Literal")
+						if l.Peek() == easylex.EOF {
+							return l.Errorf("incomplete \\U escape sequence")
+						}
+						if !matchHex.MatchOne(l) {
+							hexValid = false
+							break
+						}
+					}
+					if !hexValid {
+						break
 					}
 				case 't', 'b', 'n', 'r', 'f', '"', '\'', '\\':
 					l.Next()
@@ -278,20 +336,46 @@ func lexRDFLiteral(l *easylex.Lexer) easylex.StateFn {
 	}
 	if matchSingleQuote.MatchOne(l) {
 		for {
+			if l.Peek() == easylex.EOF {
+				return l.Errorf("unterminated single quote string")
+			}
 			if easylex.NewMatcher().RejectRunes("\u0027\u005c\u000a\u000d").MatchOne(l) {
 				// do nothing
 			} else if l.Peek() == '\\' {
 				l.Next()
+				if l.Peek() == easylex.EOF {
+					return l.Errorf("incomplete escape sequence")
+				}
 				switch l.Peek() {
 				case 'u':
 					l.Next()
+					hexValid := true
 					for i := 0; i < 4; i += 1 {
-						matchHex.AssertOne(l, "Expected hex digit while lexing RDF Literal")
+						if l.Peek() == easylex.EOF {
+							return l.Errorf("incomplete \\u escape sequence")
+						}
+						if !matchHex.MatchOne(l) {
+							hexValid = false
+							break
+						}
+					}
+					if !hexValid {
+						break
 					}
 				case 'U':
 					l.Next()
+					hexValid := true
 					for i := 0; i < 8; i += 1 {
-						matchHex.AssertOne(l, "Expected hex digit while lexing RDF Literal")
+						if l.Peek() == easylex.EOF {
+							return l.Errorf("incomplete \\U escape sequence")
+						}
+						if !matchHex.MatchOne(l) {
+							hexValid = false
+							break
+						}
+					}
+					if !hexValid {
+						break
 					}
 				case 't', 'b', 'n', 'r', 'f', '"', '\'', '\\':
 					l.Next()

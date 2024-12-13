@@ -3,7 +3,6 @@ package gon3
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"strings"
 
@@ -41,7 +40,7 @@ func NewParser(baseUri string) *Parser {
 func (p *Parser) Parse(input io.Reader) (*Graph, error) {
 	var err error
 	var done bool
-	body, err := ioutil.ReadAll(input)
+	body, err := io.ReadAll(input)
 	if err != nil {
 		return p.Graph, err
 	}
@@ -83,7 +82,7 @@ func (p *Parser) next() easylex.Token {
 func (p *Parser) expect(typ easylex.TokenType) (easylex.Token, error) {
 	tok := p.next()
 	if tok.Typ != typ {
-		return tok, fmt.Errorf("expected %v, got %s (type %v)", typ, tok.Val, tok.Typ)
+		return tok, fmt.Errorf("Expected %v, got %v (type %v)", typ, tok.Val, tok.Typ)
 	}
 	return tok, nil
 }
@@ -112,7 +111,7 @@ func (p *Parser) newBlankNode() *BlankNode {
 	id := p.lastBlankNode + 1
 	label := fmt.Sprintf("a%d", id)
 	b := &BlankNode{
-		Id:    id,
+		ID:    id,
 		Label: label,
 	}
 	p.lastBlankNode = id
@@ -316,7 +315,7 @@ func (p *Parser) parseSubject() error {
 		p.curSubject = bNode
 		return err
 	default:
-		return fmt.Errorf("expected a subject, got %v (type %v)", tok, tok.Typ)
+		return fmt.Errorf("Expected a subject, got %v (type %v)", tok, tok.Typ)
 	}
 }
 
@@ -374,7 +373,7 @@ func (p *Parser) parsePredicate() error {
 		p.curPredicate = iri
 		return err
 	default:
-		return fmt.Errorf("expected predicate, got %v (type %v)", tok, tok.Typ)
+		return fmt.Errorf("Expected predicate, got %v (type %v)", tok, tok.Typ)
 	}
 }
 
@@ -479,7 +478,7 @@ func (p *Parser) parseObject() error {
 		p.emitTriple(p.curSubject, p.curPredicate, lit)
 		return err
 	default:
-		return fmt.Errorf("expected object, got %v (type %v)", tok, tok.Typ)
+		return fmt.Errorf("Expected object, got %v (type %v)", tok, tok.Typ)
 	}
 }
 
@@ -593,7 +592,7 @@ func (p *Parser) parseRDFLiteral() (*Literal, error) {
 			}
 			lit.DatatypeIRI = iri
 		default:
-			return nil, fmt.Errorf("expected an IRI or PName, got %s (type %v)", tok.Val, tok.Typ)
+			return nil, fmt.Errorf("Expected an IRI or PName, got %v (type %v)", tok.Val, tok.Typ)
 		}
 	}
 	return lit, nil

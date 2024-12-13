@@ -1,4 +1,4 @@
-module github.com/deiu/gon3
+module github.com/kiivihal/gon3
 
 go 1.23.4
 

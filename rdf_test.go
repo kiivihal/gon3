@@ -185,3 +185,27 @@ func TestUnescapeUChar(t *testing.T) {
 		})
 	}
 }
+
+// Each escape is decoded once: an escaped backslash stays a backslash
+// and never forms a new escape with the character after it.
+func TestLexicalFormUnescapesOnce(t *testing.T) {
+	tests := []struct {
+		name, in, want string
+	}{
+		{"escaped backslash before n", `"a\\nb"`, `a\nb`},
+		{"escaped backslash before t", `"C:\\temp"`, `C:\temp`},
+		{"two escaped backslashes", `"a\\\\b"`, `a\\b`},
+		{"newline escape", `"a\nb"`, "a\nb"},
+		{"quote escape", `"say \"hi\""`, `say "hi"`},
+		{"uchar backslash then n", `"\u005Cn"`, `\n`},
+		{"uchar and echar", `"\u00E9\t"`, "é\t"},
+		{"long quoted", `"""a\\nb"""`, `a\nb`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := lexicalForm(tt.in); got != tt.want {
+				t.Errorf("lexicalForm(%s) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}

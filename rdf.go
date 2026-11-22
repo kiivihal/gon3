@@ -154,29 +154,7 @@ func lexicalForm(s string) string {
 	} else {
 		unquoted = s[1 : len(s)-1]
 	}
-	u := unescapeUChar(unquoted)
-	ret := unescapeEChar(u)
-	return ret
-}
-
-func unescapeEChar(s string) string {
-	replacements := []struct {
-		old string
-		new string
-	}{
-		{`\t`, "\t"},
-		{`\b`, "\b"},
-		{`\n`, "\n"},
-		{`\r`, "\r"},
-		{`\f`, "\f"},
-		{`\"`, `"`},
-		{`\'`, `'`},
-		{`\\`, `\`},
-	}
-	for _, r := range replacements {
-		s = strings.ReplaceAll(s, r.old, r.new)
-	}
-	return s
+	return unescape(unquoted, true)
 }
 
 func getIndexOfEscape(s string, substr string) int {
@@ -211,6 +189,16 @@ func getIndexOfEscape(s string, substr string) int {
 }
 
 func unescapeUChar(s string) string {
+	return unescape(s, false)
+}
+
+// echars maps the character after a backslash to what an ECHAR stands for.
+var echars = map[byte]byte{'t': '\t', 'b': '\b', 'n': '\n', 'r': '\r', 'f': '\f', '"': '"', '\'': '\'', '\\': '\\'}
+
+// unescape decodes UCHARs (\uXXXX, \UXXXXXXXX) and, when echar is set, the
+// ECHARs of a literal, in one pass: each escape is decoded exactly once, so
+// an escaped backslash never forms a new escape with the character after it.
+func unescape(s string, echar bool) string {
 	var result strings.Builder
 	for i := 0; i < len(s); {
 		// Not an escape sequence
@@ -225,6 +213,14 @@ func unescapeUChar(s string) string {
 			result.WriteByte('\\')
 			i += 2
 			continue
+		}
+
+		if echar {
+			if c, ok := echars[s[i+1]]; ok {
+				result.WriteByte(c)
+				i += 2
+				continue
+			}
 		}
 
 		// Check for Unicode escape
